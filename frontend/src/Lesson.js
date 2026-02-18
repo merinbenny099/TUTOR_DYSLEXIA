@@ -1,68 +1,114 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState } from "react";
+import { lessonsData } from "./lessonsData";
 
-const Lesson = ({ onBack, onNext, logInteraction }) => {
-  const [startTime] = useState(Date.now());
-  const [isReading, setIsReading] = useState(false);
-  const lessonRef = useRef(null);
+function Lesson({ selectedSubject, currentUserData, onBack }) {
+  const [currentLessonIndex, setCurrentLessonIndex] = useState(0);
+  const [currentTab, setCurrentTab] = useState("read");
+  const [userAnswers, setUserAnswers] = useState({});
+  const [score, setScore] = useState(null);
 
-  // 1. TEXT-TO-SPEECH (Multisensory Support)
-  const speak = (text) => {
-    window.speechSynthesis.cancel(); // Stop any current speech
+  const lesson = lessonsData[selectedSubject][currentLessonIndex];
+
+  const speakText = (text) => {
     const utterance = new SpeechSynthesisUtterance(text);
-    utterance.rate = 0.85; // Slower pace for dyslexia support
-    utterance.onstart = () => setIsReading(true);
-    utterance.onend = () => {
-      setIsReading(false);
-      // LOGGING: User used audio support (Sign of engagement or struggle)
-      logInteraction({ user_id: "User_01", type: "audio_play", content_id: "lesson_1" });
-    };
     window.speechSynthesis.speak(utterance);
   };
 
-  // 2. INTERACTION TRACKING (For your ML Model)
-  const handleNext = () => {
-    const timeSpent = (Date.now() - startTime) / 1000;
-    // Sending metrics: Time spent is key for "Struggle" classification
-    logInteraction({
-      user_id: "User_01",
-      dwellTime: timeSpent,
-      content_id: "lesson_1"
+  const submitTest = () => {
+    let correct = 0;
+    lesson.test.forEach((q, idx) => {
+      if (userAnswers[idx] === q.answer) correct++;
     });
-    onNext();
+    setScore(correct);
+
+    if (currentUserData) {
+      const xpEarned = correct;
+      currentUserData.xp += xpEarned;
+      currentUserData.level = 1 + Math.floor(currentUserData.xp / 100);
+
+      const completed = currentUserData.completedLessons[selectedSubject] || [];
+      if (!completed.includes(lesson.id)) completed.push(lesson.id);
+      currentUserData.completedLessons[selectedSubject] = completed;
+
+      alert(`Test Completed! Score: ${correct}/${lesson.test.length}, XP Earned: ${xpEarned}`);
+    }
   };
 
-  const lessonContent = "Dyslexia is a learning difficulty that affects the way people read and spell words. It has nothing to do with intelligence. Many creative people have dyslexia!";
+  const nextDisabled = !currentUserData.completedLessons[selectedSubject]?.includes(lesson.id);
 
   return (
-    <div className="lesson-container" style={{ padding: '40px', textAlign: 'left' }}>
-      <button onClick={onBack}>⬅ Back to Dashboard</button>
-      
-      <h2 style={{ marginTop: '20px' }}>What is Dyslexia?</h2>
-      
-      {/* Visual Aid placeholder */}
-      <div style={{ background: '#ddd', height: '200px', borderRadius: '15px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '20px' }}>
-        <p>[Educational Image/Animation Here]</p>
+    <div style={{ padding: "20px", textAlign: "center" }}>
+      <h2>{selectedSubject} - {lesson.title}</h2>
+
+      {/* Tabs */}
+      <div style={{ marginBottom: "20px" }}>
+        <button onClick={() => setCurrentTab("read")}>Read</button>
+        <button onClick={() => setCurrentTab("flashcards")}>Flashcards</button>
+        <button onClick={() => setCurrentTab("test")}>Test</button>
       </div>
 
-      <p style={{ lineHeight: '1.6', fontSize: '1.2em' }}>{lessonContent}</p>
+      {/* Tab Content */}
+      {currentTab === "read" && (
+        <div>
+          <p>{lesson.text}</p>
+          <button onClick={() => speakText(lesson.text)}>🔊 Read Aloud</button>
+        </div>
+      )}
 
-      <div style={{ marginTop: '30px', display: 'flex', gap: '10px' }}>
-        <button 
-          onClick={() => speak(lessonContent)}
-          style={{ padding: '15px', backgroundColor: '#4A90E2', color: 'white', border: 'none', borderRadius: '8px' }}
-        >
-          {isReading ? "🔈 Reading Aloud..." : "🔊 Read to Me"}
-        </button>
+      {currentTab === "flashcards" && (
+        <div style={{ display: "flex", gap: "20px", flexWrap: "wrap", justifyContent: "center" }}>
+          {lesson.flashcards.map((card, idx) => (
+            <div key={idx} style={{ border: "1px solid #ccc", padding: "10px", borderRadius: "10px" }}>
+              <img src={card.img} alt={card.word} width={100} />
+              <p>{card.word}</p>
+              <button onClick={() => speakText(card.word)}>🔊</button>
+            </div>
+          ))}
+        </div>
+      )}
 
-        <button 
-          onClick={handleNext}
-          style={{ padding: '15px', backgroundColor: '#55efc4', border: 'none', borderRadius: '8px' }}
-        >
-          Continue to Quiz ➡
-        </button>
+      {currentTab === "test" && (
+        <div>
+          {score === null ? (
+            lesson.test.map((q, idx) => (
+              <div key={idx} style={{ marginBottom: "15px", textAlign: "left" }}>
+                <p>{idx + 1}. {q.question}</p>
+                {q.options.map((opt) => (
+                  <label key={opt} style={{ display: "block" }}>
+                    <input
+                      type="radio"
+                      name={`question-${idx}`}
+                      value={opt}
+                      checked={userAnswers[idx] === opt}
+                      onChange={() => setUserAnswers({ ...userAnswers, [idx]: opt })}
+                    />
+                    {opt}
+                  </label>
+                ))}
+              </div>
+            ))
+          ) : (
+            <h3>Your Score: {score} / {lesson.test.length}</h3>
+          )}
+          {score === null && lesson.test.length > 0 && (
+            <button onClick={submitTest}>Submit Test</button>
+          )}
+        </div>
+      )}
+
+      {/* Navigation */}
+      <div style={{ marginTop: "30px" }}>
+        {currentLessonIndex > 0 && <button onClick={() => setCurrentLessonIndex(currentLessonIndex - 1)}>Previous Lesson</button>}
+        {currentLessonIndex < lessonsData[selectedSubject].length - 1 && (
+          <button onClick={() => setCurrentLessonIndex(currentLessonIndex + 1)} disabled={nextDisabled}>
+            Next Lesson
+          </button>
+        )}
       </div>
+
+      <button style={{ marginTop: "20px" }} onClick={onBack}>Back to Dashboard</button>
     </div>
   );
-};
+}
 
 export default Lesson;

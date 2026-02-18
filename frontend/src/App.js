@@ -1,145 +1,68 @@
-import React, { useState } from 'react';
-import Dashboard from './Dashboard';
-import Lesson from './Lesson';
-import Quiz from './Quiz';
-import Flashcards from './Flashcards';
-import CreateUser from './CreateUser';
-import Accessibility from './Accessibility';
-import Welcome from './Welcome';
-import Login from './Login';
-
+import React, { useState } from "react";
+import Welcome from "./Welcome";
+import Login from "./Login";
+import CreateUser from "./CreateUser";
+import Dashboard from "./Dashboard";
+import Lesson from "./Lesson";
+import "./App.css";
 
 function App() {
-  // Navigation State
-  const [view, setView] = useState('welcome');
+  const [view, setView] = useState("welcome");
   const [currentUser, setCurrentUser] = useState(null);
+  const [users, setUsers] = useState({});
+  const [selectedSubject, setSelectedSubject] = useState(null);
 
-  // "Database" States
-  const [users, setUsers] = useState({}); // Local cache of user profiles
-  const [, setInteractionLogs] = useState([]); // Stores logs
-
-  // Accessibility/Theme State
-  const [settings, setSettings] = useState({
-    fontSize: '24px',
-    theme: 'cream',
-    contrast: false
-  });
-
-  // 1. User Creation Logic (CONNECTED TO PYTHON BACKEND)
- const handleCreateUser = async (userData) => {
-  try {
-    const response = await fetch('http://127.0.0.1:8000/api/signup/', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(userData),
-    });
-
-    const data = await response.json();
-
-    if (response.ok) {
-      alert("Success: " + data.message);
-
-      setUsers(prev => ({
-        ...prev,
-        [userData.username]: { username: userData.username }
-      }));
-
-      setView('dashboard');
-      return true;
-    } else {
-      alert("Error: " + (data.error || data.message));
-      return false;
-    }
-  } catch (error) {
-    console.error("Connection Error:", error);
-    alert("Could not connect to the Django backend. Make sure your server is running!");
-    return false;
-  }
-};
-
-
-  // 2. Interaction Logging Logic
-  const handleLogInteraction = (data) => {
-    const logEntry = {
-      user_id: data.user_id || "User_01",
-      content_id: data.content_id || "lesson_01",
-      metrics: {
-        cursor_dwell_time: data.dwellTime || 0,
-        click_latency: data.clickLatency || 0,
-        saccade_pattern: data.saccades || []
-      },
-      timestamp: new Date().toISOString()
-    };
-    setInteractionLogs(prev => [...prev, logEntry]);
-    console.log("New Log Recorded:", logEntry);
+  const handleCreateUser = (userData) => {
+    setUsers(prev => ({
+      ...prev,
+      [userData.username]: {
+        username: userData.username,
+        level: 1,
+        xp: 0,
+        totalPoints: 0,
+        completedLessons: {
+          Science: [],
+          Math: [],
+          English: [],
+          GK: []
+        }
+      }
+    }));
+    setCurrentUser(userData.username);
+    alert(`User ${userData.username} created!`);
+    setView("dashboard");
   };
 
-  const globalStyle = {
-    fontSize: settings.fontSize,
-    backgroundColor: settings.contrast ? '#000' : (settings.theme === 'cream' ? '#FFF9E3' : '#fff'),
-    color: settings.contrast ? '#FFFF00' : '#2D3436',
-    minHeight: '100vh',
-    fontFamily: 'sans-serif',
-    transition: 'all 0.3s ease'
+  const handleLogin = (username) => {
+    if (!users[username]) {
+      alert("User not found! Please create an account.");
+      return;
+    }
+    setCurrentUser(username);
+    setView("dashboard");
   };
 
   return (
-    <div style={globalStyle}>
-      {view === 'welcome' && (
-      <Welcome 
-        onCreate={() => setView('createUser')}
-        onLogin={() => setView('login')}
-      />
-    )}
-
-    {view === 'login' && (
-  <Login 
-    onSuccess={(username) => {
-      setCurrentUser(username);
-      setView('dashboard');
-    }}
-    onBack={() => setView('welcome')}
-  />
-)}
-
-
-      {view === 'dashboard' && (
-        <Dashboard 
-  onStartLesson={() => setView('lesson')} 
-  onStartFlashcards={() => setView('flashcards')} 
-  onOpenSettings={() => setView('settings')}
-  onOpenCreateUser={() => setView('createUser')} 
-  registeredUsers={users} // Pass the users here
-/>
-      )}
-
-      {view === 'createUser' && (
-        <CreateUser onCreate={handleCreateUser} onBack={() => setView('dashboard')} />
-      )}
-
-      {view === 'settings' && (
-        <Accessibility settings={settings} setSettings={setSettings} onDone={() => setView('dashboard')} />
-      )}
-
-      {view === 'lesson' && (
-        <Lesson 
-          onBack={() => setView('dashboard')} 
-          onNext={() => setView('quiz')} 
-          logInteraction={handleLogInteraction} 
+    <div>
+      {view === "welcome" && <Welcome onCreate={() => setView("createUser")} onLogin={() => setView("login")} />}
+      {view === "login" && <Login onSuccess={handleLogin} onBack={() => setView("welcome")} />}
+      {view === "createUser" && <CreateUser onCreate={handleCreateUser} onBack={() => setView("welcome")} />}
+      {view === "dashboard" && (
+        <Dashboard
+          currentUserData={users[currentUser]}
+          onStartLesson={(subject) => {
+            setSelectedSubject(subject);
+            setView("lesson");
+          }}
+          onBack={() => setView("welcome")}
         />
       )}
-
-      {view === 'quiz' && (
-        <Quiz 
-          onFinish={() => setView('dashboard')} 
-          logInteraction={handleLogInteraction}
+      {view === "lesson" && (
+        <Lesson
+          selectedSubject={selectedSubject}
+          currentUserData={users[currentUser]}
+          onBack={() => setView("dashboard")}
         />
-      )}
-
-      {view === 'flashcards' && (
-        <Flashcards onBack={() => setView('dashboard')} />
       )}
     </div>
   );
