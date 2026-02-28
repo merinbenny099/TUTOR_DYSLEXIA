@@ -1,70 +1,61 @@
-import React, { useState } from "react";
-import Welcome from "./Welcome";
-import Login from "./Login";
-import CreateUser from "./CreateUser";
+// src/App.js
+import React, { useState, useEffect } from "react";
 import Dashboard from "./Dashboard";
+import ChapterSelection from "./ChapterSelection";
 import Lesson from "./Lesson";
-import "./App.css";
+import Auth from "./Auth";
 
 function App() {
-  const [view, setView] = useState("welcome");
-  const [currentUser, setCurrentUser] = useState(null);
-  const [users, setUsers] = useState({});
-  const [selectedSubject, setSelectedSubject] = useState(null);
+  const [user, setUser] = useState(null);
+  const [subject, setSubject] = useState(null);
+  const [chapter, setChapter] = useState(null);
 
-  const handleCreateUser = (userData) => {
-    setUsers(prev => ({
-      ...prev,
-      [userData.username]: {
-        username: userData.username,
-        level: 1,
-        xp: 0,
-        totalPoints: 0,
-        completedLessons: {
-          Science: [],
-          Math: [],
-          English: [],
-          GK: []
-        }
-      }
-    }));
-    setCurrentUser(userData.username);
-    alert(`User ${userData.username} created!`);
-    setView("dashboard");
+  // Load user from localStorage
+  useEffect(() => {
+    const savedUser = localStorage.getItem("user");
+    if (savedUser) setUser(JSON.parse(savedUser));
+  }, []);
+
+  const handleLogin = (userData) => {
+    const newUser = {
+      ...userData,
+      progress: userData.progress || 0,
+      completedChapters: userData.completedChapters || [],
+    };
+    localStorage.setItem("user", JSON.stringify(newUser));
+    setUser(newUser);
   };
 
-  const handleLogin = (username) => {
-    if (!users[username]) {
-      alert("User not found! Please create an account.");
-      return;
-    }
-    setCurrentUser(username);
-    setView("dashboard");
+  const handleLogout = () => {
+    localStorage.removeItem("user");
+    setUser(null);
+    setSubject(null);
+    setChapter(null);
   };
+
+  const handleComplete = (newProgress, updatedChapters) => {
+    const updatedUser = { ...user, progress: newProgress, completedChapters: updatedChapters };
+    setUser(updatedUser);
+    localStorage.setItem("user", JSON.stringify(updatedUser));
+  };
+
+  // Screens
+  if (!user) return <Auth onLogin={handleLogin} />;
+
+  if (!subject)
+    return <Dashboard user={user} onSelectSubject={setSubject} onLogout={handleLogout} />;
+
+  if (subject && !chapter)
+    return <ChapterSelection subject={subject} onSelectChapter={setChapter} onBack={() => setSubject(null)} />;
 
   return (
-    <div>
-      {view === "welcome" && <Welcome onCreate={() => setView("createUser")} onLogin={() => setView("login")} />}
-      {view === "login" && <Login onSuccess={handleLogin} onBack={() => setView("welcome")} />}
-      {view === "createUser" && <CreateUser onCreate={handleCreateUser} onBack={() => setView("welcome")} />}
-      {view === "dashboard" && (
-        <Dashboard
-          currentUserData={users[currentUser]}
-          onStartLesson={(subject) => {
-            setSelectedSubject(subject);
-            setView("lesson");
-          }}
-          onBack={() => setView("welcome")}
-        />
-      )}
-      {view === "lesson" && (
-        <Lesson
-          selectedSubject={selectedSubject}
-          currentUserData={users[currentUser]}
-          onBack={() => setView("dashboard")}
-        />
-      )}
-    </div>
+    <Lesson
+      subject={subject}
+      chapter={chapter}
+      user={user}
+      onBack={() => setChapter(null)}
+      onComplete={handleComplete}
+    />
   );
 }
 

@@ -1,114 +1,150 @@
-import React, { useState } from "react";
-import { lessonsData } from "./lessonsData";
+// Lesson.js
+import React, { useEffect, useState } from "react";
+import axios from "axios";
+import Flashcards from "./Flashcards";
 
-function Lesson({ selectedSubject, currentUserData, onBack }) {
-  const [currentLessonIndex, setCurrentLessonIndex] = useState(0);
-  const [currentTab, setCurrentTab] = useState("read");
-  const [userAnswers, setUserAnswers] = useState({});
-  const [score, setScore] = useState(null);
+const Lesson = ({ subject, chapter, onBack, user, onComplete }) => {
+  const [lesson, setLesson] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [showFlashcards, setShowFlashcards] = useState(false);
+  const [showQuiz, setShowQuiz] = useState(false);
+  const [feedback, setFeedback] = useState("");
 
-  const lesson = lessonsData[selectedSubject][currentLessonIndex];
+  // Fetch lesson from backend
+  useEffect(() => {
+    setLoading(true);
+    setLesson(null);
+    setShowFlashcards(false);
+    setShowQuiz(false);
+    setFeedback("");
 
-  const speakText = (text) => {
-    const utterance = new SpeechSynthesisUtterance(text);
-    window.speechSynthesis.speak(utterance);
-  };
+    axios
+      .get(`http://127.0.0.1:8000/api/lessons/?subject=${subject}`)
+      .then((res) => {
+        console.log("Fetched lessons:", res.data.lessons);
+        const current = res.data.lessons?.find((l) => l.chapter === chapter);
+        if (current) setLesson(current);
+        setLoading(false);
+      })
+      .catch((err) => {
+        console.error("Error fetching lesson:", err);
+        setLesson(null);
+        setLoading(false);
+      });
+  }, [subject, chapter]);
 
-  const submitTest = () => {
-    let correct = 0;
-    lesson.test.forEach((q, idx) => {
-      if (userAnswers[idx] === q.answer) correct++;
-    });
-    setScore(correct);
-
-    if (currentUserData) {
-      const xpEarned = correct;
-      currentUserData.xp += xpEarned;
-      currentUserData.level = 1 + Math.floor(currentUserData.xp / 100);
-
-      const completed = currentUserData.completedLessons[selectedSubject] || [];
-      if (!completed.includes(lesson.id)) completed.push(lesson.id);
-      currentUserData.completedLessons[selectedSubject] = completed;
-
-      alert(`Test Completed! Score: ${correct}/${lesson.test.length}, XP Earned: ${xpEarned}`);
+  // Handle quiz answer
+  const handleAnswer = (option) => {
+    if (option === lesson.answer) {
+      setFeedback("✅ Correct! Well done!");
+      if (!user.completedChapters.includes(chapter)) {
+        const updatedChapters = [...user.completedChapters, chapter];
+        const newProgress = Math.min(
+          Math.round((updatedChapters.length / 10) * 100),
+          100
+        );
+        onComplete(newProgress, updatedChapters);
+      }
+    } else {
+      setFeedback("❌ Almost there! Try again 🌱");
     }
   };
 
-  const nextDisabled = !currentUserData.completedLessons[selectedSubject]?.includes(lesson.id);
+  // Read lesson aloud
+  const speakText = () => {
+    if (!lesson?.text) return;
+    const textToRead = Array.isArray(lesson.text) ? lesson.text.join(". ") : lesson.text;
+    const utterance = new SpeechSynthesisUtterance(textToRead);
+    utterance.rate = 0.85;
+    utterance.pitch = 1;
+    window.speechSynthesis.cancel();
+    window.speechSynthesis.speak(utterance);
+  };
 
+  // --- Loading state ---
+  if (loading) return <h2>Loading lesson 🌱</h2>;
+
+  // --- No lesson found ---
+  if (!lesson) {
+    return (
+      <div className="lesson-container">
+        <h2>Lesson coming soon 🚧</h2>
+        <button onClick={onBack} className="secondary-btn">
+          ⬅ Back to Chapters
+        </button>
+      </div>
+    );
+  }
+
+  // --- Flashcards page ---
+  if (showFlashcards) {
+    return (
+      <Flashcards
+        flashcards={lesson.flashcards}
+        onBack={() => setShowFlashcards(false)}
+      />
+    );
+  }
+
+  // --- Main lesson UI ---
   return (
-    <div style={{ padding: "20px", textAlign: "center" }}>
-      <h2>{selectedSubject} - {lesson.title}</h2>
-
-      {/* Tabs */}
-      <div style={{ marginBottom: "20px" }}>
-        <button onClick={() => setCurrentTab("read")}>Read</button>
-        <button onClick={() => setCurrentTab("flashcards")}>Flashcards</button>
-        <button onClick={() => setCurrentTab("test")}>Test</button>
-      </div>
-
-      {/* Tab Content */}
-      {currentTab === "read" && (
-        <div>
-          <p>{lesson.text}</p>
-          <button onClick={() => speakText(lesson.text)}>🔊 Read Aloud</button>
+    <div className="lesson-container">
+      <div className="card">
+        <div className="lesson-header">
+          <span className="subject-badge">{subject}</span>
+          <h1>{chapter}</h1>
         </div>
-      )}
 
-      {currentTab === "flashcards" && (
-        <div style={{ display: "flex", gap: "20px", flexWrap: "wrap", justifyContent: "center" }}>
-          {lesson.flashcards.map((card, idx) => (
-            <div key={idx} style={{ border: "1px solid #ccc", padding: "10px", borderRadius: "10px" }}>
-              <img src={card.img} alt={card.word} width={100} />
-              <p>{card.word}</p>
-              <button onClick={() => speakText(card.word)}>🔊</button>
+        {!showQuiz ? (
+          <>
+            <div className="lesson-text">
+              {lesson.text.map((line, idx) => (
+                <p key={idx}>{line}</p>
+              ))}
             </div>
-          ))}
-        </div>
-      )}
 
-      {currentTab === "test" && (
-        <div>
-          {score === null ? (
-            lesson.test.map((q, idx) => (
-              <div key={idx} style={{ marginBottom: "15px", textAlign: "left" }}>
-                <p>{idx + 1}. {q.question}</p>
-                {q.options.map((opt) => (
-                  <label key={opt} style={{ display: "block" }}>
-                    <input
-                      type="radio"
-                      name={`question-${idx}`}
-                      value={opt}
-                      checked={userAnswers[idx] === opt}
-                      onChange={() => setUserAnswers({ ...userAnswers, [idx]: opt })}
-                    />
-                    {opt}
-                  </label>
-                ))}
-              </div>
-            ))
-          ) : (
-            <h3>Your Score: {score} / {lesson.test.length}</h3>
-          )}
-          {score === null && lesson.test.length > 0 && (
-            <button onClick={submitTest}>Submit Test</button>
-          )}
-        </div>
-      )}
+            <div className="lesson-actions">
+              <button className="secondary-btn" onClick={speakText}>
+                🔊 Read Aloud
+              </button>
 
-      {/* Navigation */}
-      <div style={{ marginTop: "30px" }}>
-        {currentLessonIndex > 0 && <button onClick={() => setCurrentLessonIndex(currentLessonIndex - 1)}>Previous Lesson</button>}
-        {currentLessonIndex < lessonsData[selectedSubject].length - 1 && (
-          <button onClick={() => setCurrentLessonIndex(currentLessonIndex + 1)} disabled={nextDisabled}>
-            Next Lesson
-          </button>
+              <button
+                className="secondary-btn"
+                onClick={() => setShowFlashcards(true)}
+              >
+                🃏 Open Flashcards
+              </button>
+
+              <button
+                className="primary-btn"
+                onClick={() => setShowQuiz(true)}
+              >
+                🎯 Take Quiz
+              </button>
+            </div>
+          </>
+        ) : (
+          <div className="quiz-section">
+            <h2>{lesson.question}</h2>
+            {lesson.options.map((option, idx) => (
+              <button
+                key={idx}
+                className="quiz-btn"
+                onClick={() => handleAnswer(option)}
+              >
+                {option}
+              </button>
+            ))}
+            <p className="feedback">{feedback}</p>
+          </div>
         )}
-      </div>
 
-      <button style={{ marginTop: "20px" }} onClick={onBack}>Back to Dashboard</button>
+        <button className="secondary-btn back-btn" onClick={onBack}>
+          ⬅ Back to Chapters
+        </button>
+      </div>
     </div>
   );
-}
+};
 
 export default Lesson;
