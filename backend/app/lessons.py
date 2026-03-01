@@ -1,35 +1,33 @@
-from django.http import JsonResponse
-from django.views.decorators.csrf import csrf_exempt
-from .db_connections import db
-import json
+from app.models import Lesson, Quiz
 
+# Add a quiz to a lesson
+def add_quiz(lesson_id, question, answer):
+    try:
+        lesson = Lesson.objects.get(id=lesson_id)
+        quiz = Quiz.objects.create(
+            question=question,
+            answer=answer,
+            lesson=lesson
+        )
+        return quiz
+    except Lesson.DoesNotExist:
+        return None
 
-@csrf_exempt
-def get_lessons(request):
-    """
-    GET /lessons/?level=1&subject=Science
-    """
-    if request.method == "GET":
-        level = request.GET.get("level")
-        subject = request.GET.get("subject")
+# Get quizzes for a lesson
+def get_quiz(lesson_id):
+    try:
+        lesson = Lesson.objects.get(id=lesson_id)
+        quizzes = list(lesson.quizzes.values("question", "answer"))
+        return quizzes
+    except Lesson.DoesNotExist:
+        return []
 
-        query = {}
-        if level:
-            query["level"] = int(level)
-        if subject:
-            query["subject"] = subject
-
-        lessons = list(db.lessons.find(query, {"_id": 0}))
-        return JsonResponse({"lessons": lessons})
-
-    return JsonResponse({"error": "Only GET allowed"}, status=405)
-
-
-@csrf_exempt
-def add_lesson(request):
-    if request.method == "POST":
-        lesson = json.loads(request.body)
-        db.lessons.insert_one(lesson)
-        return JsonResponse({"status": "lesson added"}, status=201)
-
-    return JsonResponse({"error": "Only POST allowed"}, status=405)
+# Submit a quiz answer (optional: log interaction)
+def submit_quiz(lesson_id, question, user_answer):
+    # Simple check
+    quizzes = get_quiz(lesson_id)
+    for q in quizzes:
+        if q["question"] == question:
+            correct = q["answer"] == user_answer
+            return {"correct": correct}
+    return {"correct": False, "error": "Question not found"}

@@ -3,12 +3,20 @@ import React, { useState, useEffect } from "react";
 import Dashboard from "./Dashboard";
 import ChapterSelection from "./ChapterSelection";
 import Lesson from "./Lesson";
+import Flashcards from "./Flashcards";
+import Quiz from "./Quiz";
 import Auth from "./Auth";
 
+
 function App() {
+  return <AppContent />;
+}
+
+function AppContent() {
   const [user, setUser] = useState(null);
   const [subject, setSubject] = useState(null);
-  const [chapter, setChapter] = useState(null);
+  const [chapterData, setChapterData] = useState(null); // Store selected chapter
+  const [page, setPage] = useState("dashboard"); // "dashboard" | "lesson" | "flashcards" | "quiz"
 
   // Load user from localStorage
   useEffect(() => {
@@ -16,6 +24,7 @@ function App() {
     if (savedUser) setUser(JSON.parse(savedUser));
   }, []);
 
+  // Handle login
   const handleLogin = (userData) => {
     const newUser = {
       ...userData,
@@ -24,39 +33,87 @@ function App() {
     };
     localStorage.setItem("user", JSON.stringify(newUser));
     setUser(newUser);
+    setPage("dashboard");
   };
 
+  // Handle logout
   const handleLogout = () => {
     localStorage.removeItem("user");
     setUser(null);
     setSubject(null);
-    setChapter(null);
+    setChapterData(null);
+    setPage("dashboard");
   };
 
-  const handleComplete = (newProgress, updatedChapters) => {
-    const updatedUser = { ...user, progress: newProgress, completedChapters: updatedChapters };
-    setUser(updatedUser);
-    localStorage.setItem("user", JSON.stringify(updatedUser));
+  // Handle lesson/quiz completion
+  const handleComplete = (score) => {
+    // Here you can add logic to track completion, update user progress, etc.
+    alert(`You scored ${score} on this quiz!`);
   };
 
-  // Screens
+  // --- Screens ---
+
   if (!user) return <Auth onLogin={handleLogin} />;
 
-  if (!subject)
-    return <Dashboard user={user} onSelectSubject={setSubject} onLogout={handleLogout} />;
+  if (page === "dashboard") {
+    return (
+      <Dashboard
+        user={user}
+        onSelectSubject={(subj) => {
+          setSubject(subj);
+          setPage("chapterSelection");
+        }}
+        onLogout={handleLogout}
+      />
+    );
+  }
 
-  if (subject && !chapter)
-    return <ChapterSelection subject={subject} onSelectChapter={setChapter} onBack={() => setSubject(null)} />;
+  if (page === "chapterSelection") {
+    return (
+      <ChapterSelection
+        subject={subject}
+        onSelectChapter={(ch) => {
+          setChapterData(ch);
+          setPage("lesson");
+        }}
+        onBack={() => setPage("dashboard")}
+      />
+    );
+  }
 
-  return (
-    <Lesson
-      subject={subject}
-      chapter={chapter}
-      user={user}
-      onBack={() => setChapter(null)}
-      onComplete={handleComplete}
-    />
-  );
+  if (page === "lesson") {
+    return (
+      <Lesson
+        chapter={chapterData}
+        onBack={() => setPage("chapterSelection")}
+        onStartFlashcards={() => setPage("flashcards")}
+        onStartQuiz={() => setPage("quiz")}
+      />
+    );
+  }
+
+  if (page === "flashcards") {
+    return (
+      <Flashcards
+        flashcards={chapterData.flashcards}
+        onBack={() => setPage("lesson")}
+      />
+    );
+  }
+
+  if (page === "quiz") {
+    return (
+      <Quiz
+        questions={chapterData.test}
+        onFinish={(score) => {
+          handleComplete(score);
+          setPage("lesson");
+        }}
+      />
+    );
+  }
+
+  return <div>Unknown page</div>;
 }
 
 export default App;

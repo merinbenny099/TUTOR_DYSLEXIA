@@ -1,44 +1,36 @@
-import React, { useState } from 'react';
-import './Flashcards.css';
+import React, { useState } from "react";
 
-const Flashcards = ({ onBack, flashcards }) => {
-  const [index, setIndex] = useState(0);
+const Flashcards = ({ flashcards, onBack }) => {
+  const [current, setCurrent] = useState(0);
+  const [showWord, setShowWord] = useState(true);
 
-  const flashcardData = flashcards && flashcards.length > 0
-    ? flashcards
-    : [
-        { word: "Apple", emoji: "🍎", phonetic: "ap-puhl" },
-        { word: "Cat", emoji: "🐱", phonetic: "kat" },
-        { word: "Sun", emoji: "☀️", phonetic: "suhn" },
-        { word: "Tree", emoji: "🌳", phonetic: "tree" }
-      ];
+  if (!flashcards || flashcards.length === 0) return <div>No flashcards available</div>;
 
-  const playSound = (text) => {
-    const utterance = new SpeechSynthesisUtterance(text);
-    window.speechSynthesis.speak(utterance);
+  const card = flashcards[current];
+
+  const nextCard = () => {
+    setCurrent((prev) => (prev + 1) % flashcards.length);
+    setShowWord(true);
   };
 
-  const nextCard = () => setIndex(i => (i < flashcardData.length - 1 ? i + 1 : 0));
-  const prevCard = () => setIndex(i => (i > 0 ? i - 1 : flashcardData.length - 1));
-
-  const current = flashcardData[index];
-
   return (
-    <div className="flashcard-container">
-      <button className="back-btn" onClick={onBack}>⬅ Back to Lesson</button>
-      
-      <div className="flashcard-box">
-        <p className="card-counter">Card {index + 1} of {flashcardData.length}</p>
-        <div className="card-emoji">{current.emoji}</div>
-        <h2 className="card-word">{current.word}</h2>
-        <p className="card-phonetic">[{current.phonetic}]</p>
+    <div style={{ padding: "20px" }}>
+      <button onClick={onBack} style={{ marginBottom: "20px" }}>← Back</button>
 
-        <button className="action-btn" onClick={() => playSound(current.word)}>🔊 Listen</button>
-
-        <div className="card-nav">
-          <button className="prev-btn" onClick={prevCard}>⬅ Previous</button>
-          <button className="next-btn" onClick={nextCard}>Next ➡</button>
-        </div>
+      <div style={{ textAlign: "center", padding: "20px", border: "1px solid #dfe6e9", borderRadius: "10px" }}>
+        {showWord ? <h2>{card.word}</h2> : <img src={card.img} alt={card.word} style={{ maxWidth: "300px" }} />}
+        <button 
+          onClick={() => setShowWord(!showWord)}
+          style={{ marginTop: "20px", padding: "10px 20px", fontWeight: "bold", backgroundColor: "#2d3436", color: "white", border: "none", borderRadius: "8px" }}
+        >
+          Flip
+        </button>
+        <button 
+          onClick={nextCard}
+          style={{ marginTop: "20px", marginLeft: "10px", padding: "10px 20px", fontWeight: "bold", backgroundColor: "#2d3436", color: "white", border: "none", borderRadius: "8px" }}
+        >
+          Next
+        </button>
       </div>
     </div>
   );

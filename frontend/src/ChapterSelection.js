@@ -1,29 +1,23 @@
-// src/ChapterSelection.js
+// ChapterSelection.js
 import React from "react";
-import "./ChapterSelection.css";
+import { lessonsData } from "./lessonsData";
 
 const ChapterSelection = ({ subject, onSelectChapter, onBack }) => {
-  const chapterData = {
-    Science: ["Living and Non-Living Things", "Human Body", "Plants Around Us", "Solar System", "States of Matter"],
-    Maths: ["Numbers and Counting", "Addition and Subtraction", "Multiplication Basics", "Fractions", "Shapes and Geometry"],
-    English: ["Alphabet A", "Nouns and Pronouns", "Verbs and Tenses", "Sentence Formation", "Reading Comprehension"],
-  };
+  const chapters = lessonsData[subject]; // <-- This must match "Math", "English", "Science"
 
-  const chapters = chapterData[subject] || [];
+  if (!chapters) return <div>No chapters found for {subject}</div>;
 
   return (
-    <div className="chapter-container">
-      <div className="card">
-        <h1>{subject} – Choose a Chapter</h1>
-        {chapters.map((ch, idx) => (
-          <button key={idx} className="primary-btn chapter-btn" onClick={() => onSelectChapter(ch)}>
-            📘 Chapter {idx + 1}: {ch}
+    <div style={{ padding: "20px" }}>
+      <button onClick={onBack} style={{ marginBottom: "20px" }}>← Back</button>
+      <h2>{subject} Chapters</h2>
+      {chapters.map((chapter) => (
+        <div key={chapter.id} style={{ margin: "10px 0" }}>
+          <button onClick={() => onSelectChapter(chapter)} style={{ padding: "10px 20px" }}>
+            {chapter.title}
           </button>
-        ))}
-        <button className="secondary-btn back-btn" onClick={onBack}>
-          ⬅ Back to Subjects
-        </button>
-      </div>
+        </div>
+      ))}
     </div>
   );
 };

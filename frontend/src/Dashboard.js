@@ -1,27 +1,26 @@
-// src/Dashboard.js
+// Dashboard.js
 import React from "react";
-import "./Dashboard.css";
 
 const Dashboard = ({ user, onSelectSubject, onLogout }) => {
-  const subjects = ["Science", "Maths", "English"];
+  const subjects = Object.keys(user.progress ? user.progress : { Science: 0, Math: 0, English: 0 });
+  // Or just hardcode:
+  const allSubjects = ["Science", "Math", "English"];
 
   return (
-    <div className="dashboard-container">
-      <h1>Welcome, {user.name}!</h1>
-      <p>Progress: {user.progress}%</p>
+    <div style={{ padding: "20px" }}>
+      <h1>Welcome, {user.name}</h1>
+      <button onClick={onLogout}>Logout</button>
 
-      <h2>Select a Subject</h2>
-      <div className="subjects">
-        {subjects.map((subj, idx) => (
-          <button key={idx} className="primary-btn" onClick={() => onSelectSubject(subj)}>
-            {subj}
-          </button>
-        ))}
-      </div>
-
-      <button className="secondary-btn logout-btn" onClick={onLogout}>
-        Logout
-      </button>
+      <h2>Select Subject:</h2>
+      {allSubjects.map((subject) => (
+        <button
+          key={subject}
+          onClick={() => onSelectSubject(subject)}
+          style={{ margin: "5px", padding: "10px 20px" }}
+        >
+          {subject}
+        </button>
+      ))}
     </div>
   );
 };
