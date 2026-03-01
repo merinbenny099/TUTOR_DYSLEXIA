@@ -2,7 +2,9 @@ import React from "react";
 import { Theme } from "./Theme";
 
 const LessonView = ({ chapter, onBack, onStartQuiz, onStartFlashcards }) => {
+  if (!chapter) return null;
   return (
+    
     <div style={{ 
       maxWidth: "900px", 
       margin: "0 auto", 

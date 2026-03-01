@@ -4,11 +4,16 @@ import { useLevelProgress } from "./LevelProgressContext";
 
 const Level2Dashboard = ({ user, onSelectSubject, onBackToLevel1, onEnterLevel3 }) => {
   const { progress } = useLevelProgress();
-  const subjects = ["Science", "Math", "English"];
+  
+  // Mapping icons to subjects for a better visual experience
+  const subjectData = [
+    { name: "Science", icon: "🧬", color: "#9b59b6" }, // Level 2 gets a DNA strand!
+    { name: "Math", icon: "📐", color: "#3498db" },
+    { name: "English", icon: "✍️", color: "#e67e22" }
+  ];
 
-  // Calculate TOTAL stars for Level 2
-  const totalStars = subjects.reduce((acc, sub) => {
-    const scores = Object.values(progress[sub] || {});
+  const totalStars = subjectData.reduce((acc, sub) => {
+    const scores = Object.values(progress[sub.name] || {});
     return acc + scores.filter(s => s >= 7).length;
   }, 0);
 
@@ -19,48 +24,90 @@ const Level2Dashboard = ({ user, onSelectSubject, onBackToLevel1, onEnterLevel3 
     <div style={{ padding: "40px", backgroundColor: Theme.background, minHeight: "100vh", fontFamily: Theme.fontFamily }}>
       <div style={{ maxWidth: "900px", margin: "0 auto" }}>
         
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <h1 style={{ color: Theme.textMain }}>Level 2: Intermediate</h1>
-          <button onClick={onBackToLevel1} style={{ padding: "10px 20px", borderRadius: "8px", border: `2px solid ${Theme.accent}`, background: "white", color: Theme.accent, fontWeight: "bold", cursor: "pointer" }}>
+        {/* HEADER SECTION */}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "30px" }}>
+          <div>
+            <h1 style={{ color: Theme.textMain, margin: 0 }}>Level 2: Intermediate</h1>
+            <p style={{ color: Theme.textMuted, marginTop: "5px" }}>Keep going, {user.username}!</p>
+          </div>
+          <button 
+            onClick={onBackToLevel1} 
+            style={{ 
+              padding: "12px 24px", 
+              borderRadius: "12px", 
+              border: `2px solid ${Theme.sidebar}`, 
+              background: "white", 
+              color: Theme.sidebar, 
+              fontWeight: "bold", 
+              cursor: "pointer",
+              transition: "all 0.2s" 
+            }}
+          >
             ← Back to Level 1
           </button>
         </div>
-        <p style={{ color: Theme.textMuted, marginBottom: "30px" }}>Keep going, {user.username}!</p>
 
-        {/* --- LEVEL 2 PROGRESS BAR --- */}
-        <div style={{ position: "relative", width: "100%", height: "24px", backgroundColor: "#eee", borderRadius: "12px", overflow: "hidden" }}>
-  {/* The Fill */}
-  <div style={{ width: `${percent}%`, height: "100%", backgroundColor: "#9b59b6", transition: "width 1s ease-out" }} />
-  
-  {/* Milestone Markers */}
-  <div style={{ position: "absolute", left: "33.3%", top: 0, width: "2px", height: "100%", backgroundColor: "rgba(255,255,255,0.3)" }} />
-  <div style={{ position: "absolute", left: "66.6%", top: 0, width: "2px", height: "100%", backgroundColor: "rgba(255,255,255,0.3)" }} />
-</div>
-<div style={{ display: "flex", justifyContent: "space-between", padding: "0 5px", marginTop: "5px", fontSize: "11px", color: Theme.textMuted }}>
-  <span>Start</span>
-  <span>5 Stars</span>
-  <span>10 Stars</span>
-  <span>Level Up!</span>
-</div>
+        {/* PROGRESS CARD */}
+        <div style={{ backgroundColor: "white", padding: "30px", borderRadius: Theme.borderRadius, boxShadow: Theme.cardShadow, marginBottom: "40px" }}>
+           <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "15px" }}>
+              <span style={{ fontWeight: "bold", color: Theme.textMain }}>Level 3 Unlock Progress</span>
+              <span style={{ fontWeight: "bold", color: "#9b59b6" }}>{totalStars} / 15 Stars</span>
+           </div>
+           <div style={{ position: "relative", width: "100%", height: "28px", backgroundColor: "#f0f0f0", borderRadius: "14px", overflow: "hidden" }}>
+              <div style={{ width: `${percent}%`, height: "100%", backgroundColor: "#9b59b6", transition: "width 1s ease-out" }} />
+           </div>
+        </div>
 
-        {/* --- SUBJECT CARDS --- */}
+        {/* SUBJECT CARDS */}
         <div style={{ display: "flex", gap: "25px" }}>
-          {subjects.map(s => (
-            <button key={s} onClick={() => onSelectSubject(s)} style={{ width: Theme.cardWidth, height: Theme.cardHeight, borderRadius: Theme.borderRadius, border: "none", backgroundColor: "white", fontSize: Theme.cardFontSize, fontWeight: "bold", color: Theme.textMain, boxShadow: Theme.cardShadow, borderTop: `8px solid ${Theme.accent}`, cursor: "pointer" }}>
-              {s}
+          {subjectData.map(sub => (
+            <button 
+              key={sub.name} 
+              onClick={() => onSelectSubject(sub.name)} 
+              style={{ 
+                flex: 1,
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                padding: "50px 20px",
+                borderRadius: Theme.borderRadius, 
+                border: "none", 
+                backgroundColor: "white", 
+                boxShadow: Theme.cardShadow, 
+                borderBottom: `10px solid ${sub.color}`,
+                cursor: "pointer",
+                transition: "transform 0.2s"
+              }}
+              onMouseOver={(e) => e.currentTarget.style.transform = "translateY(-10px)"}
+              onMouseOut={(e) => e.currentTarget.style.transform = "translateY(0)"}
+            >
+              {/* LARGE SUBJECT ICON */}
+              <span style={{ fontSize: "70px", marginBottom: "20px" }}>{sub.icon}</span>
+              <span style={{ fontSize: "24px", fontWeight: "bold", color: Theme.textMain }}>{sub.name}</span>
             </button>
           ))}
         </div>
 
-        {/* --- LEVEL 3 UNLOCK BUTTON --- */}
+        {/* LEVEL 3 UNLOCK BUTTON */}
         {isLevel3Ready && (
-          <div style={{ marginTop: "40px", textAlign: "center", padding: "30px", backgroundColor: "#d4edda", borderRadius: Theme.borderRadius, border: "2px dashed #28a745" }}>
-            <h2 style={{ color: "#155724", marginBottom: "10px" }}>🎉 Level 2 Complete!</h2>
+          <div style={{ marginTop: "40px", textAlign: "center", padding: "40px", backgroundColor: "#d4edda", borderRadius: Theme.borderRadius, border: "3px dashed #2ecc71" }}>
+            <span style={{ fontSize: "50px", display: "block", marginBottom: "15px" }}>🏆</span>
+            <h2 style={{ color: "#155724", marginBottom: "20px" }}>Level 2 Mastered!</h2>
             <button 
               onClick={onEnterLevel3} 
-              style={{ padding: "15px 40px", backgroundColor: "#2ecc71", color: "white", border: "none", borderRadius: "10px", fontSize: "20px", fontWeight: "bold", cursor: "pointer", boxShadow: "0 4px 15px rgba(46, 204, 113, 0.3)" }}
+              style={{ 
+                padding: "20px 60px", 
+                backgroundColor: "#2ecc71", 
+                color: "white", 
+                border: "none", 
+                borderRadius: "15px", 
+                fontSize: "22px", 
+                fontWeight: "bold", 
+                cursor: "pointer", 
+                boxShadow: "0 10px 20px rgba(46, 204, 113, 0.4)" 
+              }}
             >
-              Unlock Level 3
+              Unlock Level 3: Advanced
             </button>
           </div>
         )}

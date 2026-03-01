@@ -4,11 +4,16 @@ import { useLevelProgress } from "./LevelProgressContext";
 
 const Dashboard = ({ user, onSelectSubject, onEnterLevel2 }) => {
   const { progress, isLevel2Unlocked } = useLevelProgress();
-  const subjects = ["Science", "Math", "English"];
+  
+  // Define subjects with their corresponding icons
+  const subjects = [
+    { name: "Science", icon: "🔬", color: "#9b59b6" },
+    { name: "Math", icon: "📐", color: "#3498db" },
+    { name: "English", icon: "📚", color: "#e67e22" }
+  ];
 
-  // 1. Calculate TOTAL stars across all 3 subjects
   const totalStars = subjects.reduce((acc, sub) => {
-    const scores = Object.values(progress[sub] || {});
+    const scores = Object.values(progress[sub.name] || {});
     return acc + scores.filter(s => s >= 7).length;
   }, 0);
 
@@ -21,34 +26,55 @@ const Dashboard = ({ user, onSelectSubject, onEnterLevel2 }) => {
         <h1 style={{ color: Theme.textMain, marginBottom: "5px" }}>Level 1: Foundations</h1>
         <p style={{ color: Theme.textMuted, marginBottom: "30px" }}>Welcome back, {user.username}!</p>
 
-        {/* --- THE PROGRESS BAR CARD --- */}
-        <div style={{ position: "relative", width: "100%", height: "24px", backgroundColor: "#eee", borderRadius: "12px", overflow: "hidden" }}>
-  {/* The Fill */}
-  <div style={{ width: `${percent}%`, height: "100%", backgroundColor: "#9b59b6", transition: "width 1s ease-out" }} />
-  
-  {/* Milestone Markers */}
-  <div style={{ position: "absolute", left: "33.3%", top: 0, width: "2px", height: "100%", backgroundColor: "rgba(255,255,255,0.3)" }} />
-  <div style={{ position: "absolute", left: "66.6%", top: 0, width: "2px", height: "100%", backgroundColor: "rgba(255,255,255,0.3)" }} />
-</div>
-<div style={{ display: "flex", justifyContent: "space-between", padding: "0 5px", marginTop: "5px", fontSize: "11px", color: Theme.textMuted }}>
-  <span>Start</span>
-  <span>5 Stars</span>
-  <span>10 Stars</span>
-  <span>Level Up!</span>
-</div>
+        {/* --- PROGRESS BAR --- */}
+        <div style={{ backgroundColor: "white", padding: "25px", borderRadius: Theme.borderRadius, boxShadow: Theme.cardShadow, marginBottom: "40px" }}>
+           <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "10px", fontWeight: "bold" }}>
+              <span>Course Progress</span>
+              <span>{totalStars} / 15 Stars</span>
+           </div>
+           <div style={{ position: "relative", width: "100%", height: "24px", backgroundColor: "#eee", borderRadius: "12px", overflow: "hidden" }}>
+             <div style={{ width: `${percent}%`, height: "100%", backgroundColor: "#9b59b6", transition: "width 1s ease-out" }} />
+           </div>
+        </div>
 
         {/* --- THE SUBJECT CARDS --- */}
         <div style={{ display: "flex", gap: "25px" }}>
-          {subjects.map(s => (
-            <button key={s} onClick={() => onSelectSubject(s)} style={{ width: Theme.cardWidth, height: Theme.cardHeight, borderRadius: Theme.borderRadius, border: "none", backgroundColor: "white", fontSize: Theme.cardFontSize, fontWeight: "bold", color: Theme.textMain, boxShadow: Theme.cardShadow, borderTop: `8px solid ${Theme.accent}`, cursor: "pointer" }}>
-              {s}
+          {subjects.map(sub => (
+            <button 
+              key={sub.name} 
+              onClick={() => onSelectSubject(sub.name)} 
+              style={{ 
+                flex: 1, // Makes them equal width
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+                padding: "40px 20px",
+                borderRadius: Theme.borderRadius, 
+                border: "none", 
+                backgroundColor: "white", 
+                boxShadow: Theme.cardShadow, 
+                borderBottom: `8px solid ${sub.color}`, // Accent color at the bottom
+                cursor: "pointer",
+                transition: "transform 0.2s"
+              }}
+              // Simple hover effect
+              onMouseOver={(e) => e.currentTarget.style.transform = "scale(1.05)"}
+              onMouseOut={(e) => e.currentTarget.style.transform = "scale(1)"}
+            >
+              {/* LARGE ICON */}
+              <span style={{ fontSize: "60px", marginBottom: "15px" }}>{sub.icon}</span>
+              
+              <span style={{ fontSize: "24px", fontWeight: "bold", color: Theme.textMain }}>
+                {sub.name}
+              </span>
             </button>
           ))}
         </div>
 
         {isLevel2Unlocked() && (
-          <button onClick={onEnterLevel2} style={{ marginTop: "40px", padding: "15px 30px", backgroundColor: "#2ecc71", color: "white", border: "none", borderRadius: "10px", fontWeight: "bold", cursor: "pointer", width: "100%" }}>
-            Go to Level 2 →
+          <button onClick={onEnterLevel2} style={{ marginTop: "40px", padding: "20px", backgroundColor: Theme.success, color: "white", border: "none", borderRadius: "15px", fontSize: "20px", fontWeight: "bold", cursor: "pointer", width: "100%", boxShadow: "0 4px 15px rgba(46, 204, 113, 0.3)" }}>
+            🚀 Unlock Level 2: Advanced Explorer! →
           </button>
         )}
       </div>

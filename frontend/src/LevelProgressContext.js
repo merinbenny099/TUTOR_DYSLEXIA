@@ -13,6 +13,9 @@ export const LevelProgressProvider = ({ children }) => {
     return { Science: {}, Math: {}, English: {} };
   });
 
+  window.forceProgress = setProgress;// temporary
+
+
   // 2. This function saves the star to the correct user's slot
   const markModuleComplete = (subject, moduleId, score) => {
     const currentUser = JSON.parse(localStorage.getItem("current_user"));
