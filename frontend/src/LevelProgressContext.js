@@ -1,44 +1,55 @@
-import React, { createContext, useState, useContext } from 'react';
-import { lessonsData } from './lessonsData';
-
-// Create Context
+import React, { createContext, useContext, useState } from "react";
 const LevelProgressContext = createContext();
 
-// Provider
 export const LevelProgressProvider = ({ children }) => {
-  // Structure: { Science: {1: score, 2: score, ...}, Math: {...}, English: {...} }
-  const initialProgress = {};
-  Object.keys(lessonsData).forEach(subject => {
-    initialProgress[subject] = {};
-    lessonsData[subject].forEach(lesson => {
-      initialProgress[subject][lesson.id] = null; // null = not completed
-    });
+  // 1. Initialize progress by looking at the CURRENT user
+  const [progress, setProgress] = useState(() => {
+    const currentUser = JSON.parse(localStorage.getItem("current_user"));
+    if (currentUser) {
+      const allUsers = JSON.parse(localStorage.getItem("tutor_users") || "{}");
+      // Return the specific progress for this username, or empty if new
+      return allUsers[currentUser.username]?.progress || { Science: {}, Math: {}, English: {} };
+    }
+    return { Science: {}, Math: {}, English: {} };
   });
 
-  const [progress, setProgress] = useState(initialProgress);
-  const [level2Unlocked, setLevel2Unlocked] = useState(false);
+  // 2. This function saves the star to the correct user's slot
+  const markModuleComplete = (subject, moduleId, score) => {
+    const currentUser = JSON.parse(localStorage.getItem("current_user"));
+    if (!currentUser) return;
 
-  const markModuleComplete = (subject, lessonId, score) => {
-    setProgress(prev => {
-      const updated = { ...prev, [subject]: { ...prev[subject], [lessonId]: score } };
+    setProgress((prev) => {
+      const newProgress = {
+        ...prev,
+        [subject]: { ...prev[subject], [moduleId]: score },
+      };
 
-      // Check if Level 2 can be unlocked
-      const allSubjectsCompleted = Object.keys(updated).every(sub => {
-        return Object.values(updated[sub]).every(s => s >= 7);
-      });
+      // UPDATE MASTER LIST: Save this user's new progress back to the database
+      const allUsers = JSON.parse(localStorage.getItem("tutor_users") || "{}");
+      if (allUsers[currentUser.username]) {
+        allUsers[currentUser.username].progress = newProgress;
+        localStorage.setItem("tutor_users", JSON.stringify(allUsers));
+      }
 
-      if (allSubjectsCompleted) setLevel2Unlocked(true);
-
-      return updated;
+      return newProgress;
     });
   };
 
+  const isLevel2Unlocked = () => {
+    const subjects = ["Science", "Math", "English"];
+    let totalStars = 0;
+    subjects.forEach((sub) => {
+      const scores = Object.values(progress[sub] || {});
+      totalStars += scores.filter((s) => s !== null && s >= 7).length;
+    });
+    return totalStars >= 15;
+  };
+
   return (
-    <LevelProgressContext.Provider value={{ progress, markModuleComplete, level2Unlocked }}>
+    <LevelProgressContext.Provider value={{ progress, markModuleComplete, isLevel2Unlocked }}>
       {children}
     </LevelProgressContext.Provider>
   );
 };
 
-// Hook for easy access
 export const useLevelProgress = () => useContext(LevelProgressContext);

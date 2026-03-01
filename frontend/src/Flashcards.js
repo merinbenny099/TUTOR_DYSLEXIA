@@ -1,36 +1,91 @@
 import React, { useState } from "react";
+import { Theme } from "./Theme";
 
 const Flashcards = ({ flashcards, onBack }) => {
-  const [current, setCurrent] = useState(0);
-  const [showWord, setShowWord] = useState(true);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [isFlipped, setIsFlipped] = useState(false);
 
-  if (!flashcards || flashcards.length === 0) return <div>No flashcards available</div>;
+  const handleNext = () => {
+    setIsFlipped(false);
+    setCurrentIndex((prev) => (prev + 1) % flashcards.length);
+  };
 
-  const card = flashcards[current];
-
-  const nextCard = () => {
-    setCurrent((prev) => (prev + 1) % flashcards.length);
-    setShowWord(true);
+  const handlePrev = () => {
+    setIsFlipped(false);
+    setCurrentIndex((prev) => (prev - 1 + flashcards.length) % flashcards.length);
   };
 
   return (
-    <div style={{ padding: "20px" }}>
-      <button onClick={onBack} style={{ marginBottom: "20px" }}>← Back</button>
+    <div style={{ 
+      padding: "40px", 
+      backgroundColor: Theme.background, 
+      minHeight: "100vh",
+      fontFamily: Theme.fontFamily,
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "center"
+    }}>
+      <div style={{ width: "100%", maxWidth: "800px" }}>
+        <button onClick={onBack} style={{ color: Theme.accent, background: "none", border: "none", cursor: "pointer", fontWeight: "bold", marginBottom: "30px" }}>
+          ← Back to Lesson
+        </button>
 
-      <div style={{ textAlign: "center", padding: "20px", border: "1px solid #dfe6e9", borderRadius: "10px" }}>
-        {showWord ? <h2>{card.word}</h2> : <img src={card.img} alt={card.word} style={{ maxWidth: "300px" }} />}
-        <button 
-          onClick={() => setShowWord(!showWord)}
-          style={{ marginTop: "20px", padding: "10px 20px", fontWeight: "bold", backgroundColor: "#2d3436", color: "white", border: "none", borderRadius: "8px" }}
+        {/* PROGRESS COUNTER */}
+        <div style={{ textAlign: "center", marginBottom: "20px", color: Theme.textMuted, fontWeight: "bold" }}>
+          Card {currentIndex + 1} of {flashcards.length}
+        </div>
+
+        {/* THE MAIN FLASHCARD */}
+        <div 
+          onClick={() => setIsFlipped(!isFlipped)}
+          style={{ 
+            width: "100%",
+            height: "350px",
+            backgroundColor: "white",
+            borderRadius: Theme.borderRadius,
+            boxShadow: Theme.cardShadow,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            cursor: "pointer",
+            textAlign: "center",
+            padding: "40px",
+            transition: "transform 0.6s",
+            transformStyle: "preserve-3d",
+            borderTop: `10px solid ${isFlipped ? "#9b59b6" : Theme.accent}`, // Purple for back, Blue for front
+            position: "relative"
+          }}
         >
-          Flip
-        </button>
-        <button 
-          onClick={nextCard}
-          style={{ marginTop: "20px", marginLeft: "10px", padding: "10px 20px", fontWeight: "bold", backgroundColor: "#2d3436", color: "white", border: "none", borderRadius: "8px" }}
-        >
-          Next
-        </button>
+          <div style={{ fontSize: "32px", color: Theme.textMain, fontWeight: "bold", lineHeight: "1.4" }}>
+            {isFlipped ? flashcards[currentIndex].back : flashcards[currentIndex].front}
+          </div>
+          
+          <div style={{ position: "absolute", bottom: "20px", color: Theme.textMuted, fontSize: "14px" }}>
+            Click to flip 🔄
+          </div>
+        </div>
+
+        {/* CONTROLS */}
+        <div style={{ display: "flex", justifyContent: "space-between", marginTop: "40px", gap: "20px" }}>
+          <button 
+            onClick={handlePrev}
+            style={{ 
+              flex: 1, padding: "15px", borderRadius: "12px", border: `2px solid ${Theme.accent}`,
+              backgroundColor: "white", color: Theme.accent, fontWeight: "bold", cursor: "pointer" 
+            }}
+          >
+            Previous
+          </button>
+          <button 
+            onClick={handleNext}
+            style={{ 
+              flex: 1, padding: "15px", borderRadius: "12px", border: "none",
+              backgroundColor: Theme.accent, color: "white", fontWeight: "bold", cursor: "pointer" 
+            }}
+          >
+            Next Card →
+          </button>
+        </div>
       </div>
     </div>
   );

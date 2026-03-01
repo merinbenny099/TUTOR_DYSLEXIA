@@ -2,26 +2,32 @@ import React from "react";
 import { Theme } from "./Theme";
 import { useLevelProgress } from "./LevelProgressContext";
 
-const Dashboard = ({ user, onSelectSubject, onEnterLevel2 }) => {
-  const { progress, isLevel2Unlocked } = useLevelProgress();
+const Level2Dashboard = ({ user, onSelectSubject, onBackToLevel1, onEnterLevel3 }) => {
+  const { progress } = useLevelProgress();
   const subjects = ["Science", "Math", "English"];
 
-  // 1. Calculate TOTAL stars across all 3 subjects
+  // Calculate TOTAL stars for Level 2
   const totalStars = subjects.reduce((acc, sub) => {
     const scores = Object.values(progress[sub] || {});
     return acc + scores.filter(s => s >= 7).length;
   }, 0);
 
   const percent = Math.round((totalStars / 15) * 100);
+  const isLevel3Ready = totalStars >= 15;
 
   return (
     <div style={{ padding: "40px", backgroundColor: Theme.background, minHeight: "100vh", fontFamily: Theme.fontFamily }}>
       <div style={{ maxWidth: "900px", margin: "0 auto" }}>
         
-        <h1 style={{ color: Theme.textMain, marginBottom: "5px" }}>Level 1: Foundations</h1>
-        <p style={{ color: Theme.textMuted, marginBottom: "30px" }}>Welcome back, {user.username}!</p>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <h1 style={{ color: Theme.textMain }}>Level 2: Intermediate</h1>
+          <button onClick={onBackToLevel1} style={{ padding: "10px 20px", borderRadius: "8px", border: `2px solid ${Theme.accent}`, background: "white", color: Theme.accent, fontWeight: "bold", cursor: "pointer" }}>
+            ← Back to Level 1
+          </button>
+        </div>
+        <p style={{ color: Theme.textMuted, marginBottom: "30px" }}>Keep going, {user.username}!</p>
 
-        {/* --- THE PROGRESS BAR CARD --- */}
+        {/* --- LEVEL 2 PROGRESS BAR --- */}
         <div style={{ position: "relative", width: "100%", height: "24px", backgroundColor: "#eee", borderRadius: "12px", overflow: "hidden" }}>
   {/* The Fill */}
   <div style={{ width: `${percent}%`, height: "100%", backgroundColor: "#9b59b6", transition: "width 1s ease-out" }} />
@@ -37,7 +43,7 @@ const Dashboard = ({ user, onSelectSubject, onEnterLevel2 }) => {
   <span>Level Up!</span>
 </div>
 
-        {/* --- THE SUBJECT CARDS --- */}
+        {/* --- SUBJECT CARDS --- */}
         <div style={{ display: "flex", gap: "25px" }}>
           {subjects.map(s => (
             <button key={s} onClick={() => onSelectSubject(s)} style={{ width: Theme.cardWidth, height: Theme.cardHeight, borderRadius: Theme.borderRadius, border: "none", backgroundColor: "white", fontSize: Theme.cardFontSize, fontWeight: "bold", color: Theme.textMain, boxShadow: Theme.cardShadow, borderTop: `8px solid ${Theme.accent}`, cursor: "pointer" }}>
@@ -46,14 +52,21 @@ const Dashboard = ({ user, onSelectSubject, onEnterLevel2 }) => {
           ))}
         </div>
 
-        {isLevel2Unlocked() && (
-          <button onClick={onEnterLevel2} style={{ marginTop: "40px", padding: "15px 30px", backgroundColor: "#2ecc71", color: "white", border: "none", borderRadius: "10px", fontWeight: "bold", cursor: "pointer", width: "100%" }}>
-            Go to Level 2 →
-          </button>
+        {/* --- LEVEL 3 UNLOCK BUTTON --- */}
+        {isLevel3Ready && (
+          <div style={{ marginTop: "40px", textAlign: "center", padding: "30px", backgroundColor: "#d4edda", borderRadius: Theme.borderRadius, border: "2px dashed #28a745" }}>
+            <h2 style={{ color: "#155724", marginBottom: "10px" }}>🎉 Level 2 Complete!</h2>
+            <button 
+              onClick={onEnterLevel3} 
+              style={{ padding: "15px 40px", backgroundColor: "#2ecc71", color: "white", border: "none", borderRadius: "10px", fontSize: "20px", fontWeight: "bold", cursor: "pointer", boxShadow: "0 4px 15px rgba(46, 204, 113, 0.3)" }}
+            >
+              Unlock Level 3
+            </button>
+          </div>
         )}
       </div>
     </div>
   );
 };
 
-export default Dashboard;
+export default Level2Dashboard;

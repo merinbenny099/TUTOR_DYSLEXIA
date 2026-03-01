@@ -1,38 +1,36 @@
-// Lesson.js
-import React from "react";
-import LessonView from "./LessonView";
+import React, { useState } from "react";
 
 const Lesson = ({ chapter, onBack, onStartFlashcards, onStartQuiz }) => {
-  if (!chapter) return <div>Loading lesson...</div>;
+  const [ttsEnabled, setTtsEnabled] = useState(false);
+
+  // Simple TTS function
+  const handleSpeak = (text) => {
+    if (!("speechSynthesis" in window)) {
+      alert("TTS not supported in your browser.");
+      return;
+    }
+    const utterance = new SpeechSynthesisUtterance(text);
+    window.speechSynthesis.speak(utterance);
+  };
 
   return (
     <div style={{ padding: "20px" }}>
       <button onClick={onBack} style={{ marginBottom: "20px" }}>← Back</button>
 
-      <LessonView
-        title={chapter.title}
-        content={chapter.text}
-        imageUrl={chapter.imageUrl}
-      />
+      <h2>{chapter.title}</h2>
 
-      <div style={{ marginTop: "30px" }}>
-        {chapter.flashcards?.length > 0 && (
-          <button
-            onClick={onStartFlashcards}
-            style={{ marginRight: "10px", padding: "10px 20px" }}
-          >
-            Go to Flashcards
-          </button>
-        )}
+      <div style={{ margin: "20px 0" }}>
+        <p>{chapter.text}</p>
+        <button onClick={() => handleSpeak(chapter.text)}>
+          🔊 Listen to Lesson
+        </button>
+      </div>
 
-        {chapter.test?.length > 0 && (
-          <button
-            onClick={onStartQuiz}
-            style={{ padding: "10px 20px" }}
-          >
-            Take Quiz
-          </button>
-        )}
+      <div style={{ marginTop: "40px" }}>
+        <button onClick={onStartFlashcards} style={{ marginRight: "20px" }}>
+          🃏 Flashcards
+        </button>
+        <button onClick={onStartQuiz}>📝 Quiz</button>
       </div>
     </div>
   );
