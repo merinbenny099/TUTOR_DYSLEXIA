@@ -1,18 +1,22 @@
 from django.urls import path
-from .views import log_interaction
+from .views import get_lessons, get_lesson, log_interaction
 from .auth import signup, login
-from .lessons import add_lesson, get_lessons
 from .quiz import add_quiz, get_quiz, submit_quiz
 
-
-
 urlpatterns = [
-    path('signup/', signup),
-    path('login/', login),
-    path('logs/', log_interaction),
-    path('add-lesson/', add_lesson),
-    path('lessons/', get_lessons),
-    path('add-quiz/', add_quiz),
-    path('quiz/', get_quiz),
-    path('submit-quiz/', submit_quiz),
+    # Auth
+    path("signup/", signup, name="signup"),
+    path("login/", login, name="login"),
+
+    # Lessons
+    path("lessons/", get_lessons, name="get_lessons"),   # React frontend fetches all lessons
+    path("lesson/", get_lesson, name="get_lesson"),      # Fetch a single lesson (by subject/chapter)
+
+    # Log interactions
+    path("log/", log_interaction, name="log_interaction"),
+
+    # Quizzes
+    path("add-quiz/", add_quiz, name="add_quiz"),
+    path("quiz/", get_quiz, name="get_quiz"),
+    path("submit-quiz/", submit_quiz, name="submit_quiz"),
 ]

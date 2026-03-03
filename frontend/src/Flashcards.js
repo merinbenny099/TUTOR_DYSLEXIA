@@ -1,98 +1,114 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
+import { Theme } from "./Theme";
+import { speak } from "./speech";
 
-const Flashcards = ({ onBack }) => {
-  const [index, setIndex] = useState(0);
+const Flashcards = ({ flashcards, onBack }) => {
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [isFlipped, setIsFlipped] = useState(false);
 
-  // Data pulled from your "Educational Content Datasets" [cite: 628, 629, 630]
-  const flashcardData = [
-    { word: "Apple", emoji: "🍎", phonetic: "ap-puhl" }, // [cite: 648]
-    { word: "Cat", emoji: "🐱", phonetic: "kat" },
-    { word: "Sun", emoji: "☀️", phonetic: "suhn" },
-    { word: "Tree", emoji: "🌳", phonetic: "tree" }
-  ];
-
-  // Multisensory Feature: Text-to-Speech [cite: 372, 399, 457]
-  const playSound = (text) => {
-    const utterance = new SpeechSynthesisUtterance(text);
-    window.speechSynthesis.speak(utterance);
+  // Helper to speak current side
+  const speakCurrentSide = (e) => {
+    e.stopPropagation(); // Prevents the card from flipping when clicking the speaker
+    const text = isFlipped ? flashcards[currentIndex].back : flashcards[currentIndex].front;
+    speak(text);
   };
 
-  const nextCard = () => {
-    if (index < flashcardData.length - 1) {
-      setIndex(index + 1);
-    } else {
-      setIndex(0); // Loops back to the start [cite: 680]
+  const handleNext = () => {
+    setIsFlipped(false);
+    setCurrentIndex((prev) => (prev + 1) % flashcards.length);
+  };
+
+  const handlePrev = () => {
+    setIsFlipped(false);
+    setCurrentIndex((prev) => (prev - 1 + flashcards.length) % flashcards.length);
+  };
+
+  const toggleFlip = () => {
+    const newFlippedState = !isFlipped;
+    setIsFlipped(newFlippedState);
+    
+    // AUTO-SPEAK: Read the answer (back) automatically when flipped open
+    if (newFlippedState) {
+      speak(flashcards[currentIndex].back);
     }
   };
-
-  const prevCard = () => {
-    if (index > 0) {
-      setIndex(index - 1);
-    }
-  };
-
-  const current = flashcardData[index];
 
   return (
-    <div style={{ padding: '20px', textAlign: 'center' }}>
-      {/* Navigation Header */}
-      <button onClick={onBack} style={styles.navBtn}>← Back to Dashboard</button>
-      
-      <div style={styles.flashcardBox}>
-        <p style={{ color: '#666', fontSize: '1rem' }}>Card {index + 1} of {flashcardData.length}</p>
-        
-        {/* Visual Reinforcement [cite: 633] */}
-        <div style={{ fontSize: '8rem', margin: '20px 0' }}>{current.emoji}</div>
-        
-        {/* Word Label and Phonetic Mapping [cite: 648] */}
-        <h2 style={{ fontSize: '3.5rem', margin: '0' }}>{current.word}</h2>
-        <p style={{ fontSize: '1.2rem', color: '#6c5ce7', fontWeight: 'bold' }}>[{current.phonetic}]</p>
-
-        {/* TTS Control [cite: 399, 457] */}
-        <button 
-          onClick={() => playSound(current.word)} 
-          style={{ ...styles.actionBtn, backgroundColor: '#00b894', marginTop: '20px' }}
-        >
-          🔊 Listen
+    <div style={{ 
+      padding: "40px", 
+      backgroundColor: Theme.background, 
+      minHeight: "100vh",
+      fontFamily: Theme.fontFamily,
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "center"
+    }}>
+      <div style={{ width: "100%", maxWidth: "800px" }}>
+        <button onClick={onBack} style={{ color: Theme.accent, background: "none", border: "none", cursor: "pointer", fontWeight: "bold", marginBottom: "30px" }}>
+          ← Back to Lesson
         </button>
 
-        {/* Card Navigation */}
-        <div style={{ display: 'flex', justifyContent: 'center', gap: '20px', marginTop: '40px' }}>
-          <button onClick={prevCard} style={styles.navBtn}>Previous</button>
-          <button onClick={nextCard} style={{ ...styles.navBtn, backgroundColor: '#0984e3', color: 'white', border: 'none' }}>Next Card</button>
+        <div style={{ textAlign: "center", marginBottom: "20px", color: Theme.textMuted, fontWeight: "bold" }}>
+          Card {currentIndex + 1} of {flashcards.length}
+        </div>
+
+        {/* THE MAIN FLASHCARD */}
+        <div 
+          onClick={toggleFlip}
+          style={{ 
+            width: "100%",
+            height: "350px",
+            backgroundColor: "white",
+            borderRadius: Theme.borderRadius,
+            boxShadow: Theme.cardShadow,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            cursor: "pointer",
+            textAlign: "center",
+            padding: "40px",
+            borderTop: `10px solid ${isFlipped ? "#9b59b6" : Theme.accent}`,
+            position: "relative"
+          }}
+        >
+          {/* TTS BUTTON - Top Right */}
+          <button 
+            onClick={speakCurrentSide}
+            style={{
+              position: "absolute",
+              top: "20px",
+              right: "20px",
+              fontSize: "30px",
+              background: "none",
+              border: "none",
+              cursor: "pointer"
+            }}
+            title="Listen"
+          >
+            🔊
+          </button>
+
+          <div style={{ fontSize: "32px", color: Theme.textMain, fontWeight: "bold", lineHeight: "1.4" }}>
+            {isFlipped ? flashcards[currentIndex].back : flashcards[currentIndex].front}
+          </div>
+          
+          <div style={{ position: "absolute", bottom: "20px", color: Theme.textMuted, fontSize: "14px" }}>
+            Click to flip 🔄
+          </div>
+        </div>
+
+        {/* CONTROLS */}
+        <div style={{ display: "flex", justifyContent: "space-between", marginTop: "40px", gap: "20px" }}>
+          <button onClick={handlePrev} style={{ flex: 1, padding: "15px", borderRadius: "12px", border: `2px solid ${Theme.accent}`, backgroundColor: "white", color: Theme.accent, fontWeight: "bold", cursor: "pointer" }}>
+            Previous
+          </button>
+          <button onClick={handleNext} style={{ flex: 1, padding: "15px", borderRadius: "12px", border: "none", backgroundColor: Theme.accent, color: "white", fontWeight: "bold", cursor: "pointer" }}>
+            Next Card →
+          </button>
         </div>
       </div>
     </div>
   );
-};
-
-// --- STYLES: Grouped into an object to resolve "no-undef" errors ---
-const styles = {
-  flashcardBox: {
-    background: 'white',
-    padding: '50px',
-    borderRadius: '30px',
-    boxShadow: '0 10px 20px rgba(0,0,0,0.1)',
-    maxWidth: '500px',
-    margin: '20px auto'
-  },
-  actionBtn: {
-    padding: '12px 25px',
-    borderRadius: '25px',
-    border: 'none',
-    color: 'white',
-    fontWeight: 'bold',
-    cursor: 'pointer',
-    fontSize: '1.1rem'
-  },
-  navBtn: {
-    padding: '10px 20px',
-    borderRadius: '15px',
-    border: '1px solid #ccc',
-    cursor: 'pointer',
-    background: '#fff',
-    fontWeight: 'bold'
-  }
 };
 
 export default Flashcards;

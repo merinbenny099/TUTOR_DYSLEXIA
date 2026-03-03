@@ -1,198 +1,124 @@
 import React from "react";
+import { Theme } from "./Theme";
+import { useLevelProgress } from "./LevelProgressContext";
 
-function Dashboard({ currentUser, onStartLesson, onLogout }) {
+const Dashboard = ({ user, onSelectSubject }) => {
+  const { progress, isLevel2Unlocked } = useLevelProgress();
+  
+  const subjects = [
+    { name: "Science", icon: "🔬", color: "#9b59b6" },
+    { name: "Math", icon: "📐", color: "#3498db" },
+    { name: "English", icon: "📚", color: "#e67e22" }
+  ];
+
+  const totalStars = subjects.reduce((acc, sub) => {
+    const scores = Object.values(progress[sub.name] || {});
+    return acc + scores.filter(s => s >= 7).length;
+  }, 0);
+
+  const goal = 15;
+  const percent = Math.min(Math.round((totalStars / goal) * 100), 100);
+  const unlocked = isLevel2Unlocked();
+
   return (
-    <div style={styles.page}>
-
-      {/* Top Bar */}
-      <div style={styles.topBar}>
-        <h2>Hi {currentUser}! 👋</h2>
-        <div>
-          <button style={styles.iconBtn}>🔔</button>
-          <button style={styles.iconBtn}>⚙</button>
-          <button style={styles.startBtn} onClick={onStartLesson}>
-            Start!
-          </button>
-        </div>
-      </div>
-
-      {/* Profile Card */}
-      <div style={styles.profileCard}>
-        <div style={styles.avatar}>👦</div>
-        <div>
-          <h3>{currentUser}</h3>
-          <p>Level 3 ⭐ 225 XP</p>
-          <div style={styles.progressBar}>
-            <div style={styles.progressFill}></div>
+    <div style={{ padding: "40px", backgroundColor: Theme.background, minHeight: "100vh", fontFamily: Theme.fontFamily }}>
+      <div style={{ maxWidth: "900px", margin: "0 auto" }}>
+        
+        {/* PERSONALIZED HEADER - Top Anchor */}
+        <div style={{ 
+          display: "flex", 
+          alignItems: "center", 
+          gap: "20px", 
+          marginBottom: "30px",
+          backgroundColor: "white",
+          padding: "20px 30px",
+          borderRadius: Theme.borderRadius,
+          boxShadow: Theme.cardShadow,
+          borderLeft: `10px solid ${Theme.accent}`
+        }}>
+          <div style={{ 
+            fontSize: "60px", 
+            backgroundColor: "#f1f5f9", 
+            width: "100px",
+            height: "100px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            borderRadius: "50%",
+            boxShadow: "inset 0 2px 4px rgba(0,0,0,0.1)"
+          }}>
+            {user.avatar || "🦊"}
+          </div>
+          <div>
+            <h1 style={{ color: Theme.textMain, margin: 0, fontSize: "32px" }}>Welcome back, {user.username}!</h1>
+            <p style={{ color: Theme.textMuted, margin: "5px 0 0 0", fontSize: "20px" }}>Foundations · Level 1</p>
           </div>
         </div>
-      </div>
 
-      {/* Subject Cards */}
-      <div style={styles.subjectRow}>
-        <div style={styles.subjectCard}>
-          📖
-          <h4>Language</h4>
+        {/* --- PROGRESS BAR --- */}
+        <div style={{ backgroundColor: "white", padding: "25px", borderRadius: Theme.borderRadius, boxShadow: Theme.cardShadow, marginBottom: "40px" }}>
+           <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "10px", fontWeight: "bold", fontSize: "20px" }}>
+              <span style={{ color: Theme.textMain }}>Level 2 Unlock Progress</span>
+              <span style={{ color: Theme.accent }}>{totalStars} / {goal} Stars</span>
+           </div>
+           <div style={{ position: "relative", width: "100%", height: "24px", backgroundColor: "#eee", borderRadius: "12px", overflow: "hidden" }}>
+             <div style={{ width: `${percent}%`, height: "100%", backgroundColor: Theme.accent, transition: "width 1s ease-out" }} />
+           </div>
         </div>
 
-        <div style={styles.subjectCard}>
-          ➕
-          <h4>Mathematics</h4>
+        {/* --- SUBJECT CARDS --- */}
+        <div style={{ display: "flex", gap: "25px", marginBottom: "40px" }}>
+          {subjects.map(sub => (
+            <button 
+              key={sub.name} 
+              onClick={() => onSelectSubject(sub.name)} 
+              style={{ 
+                flex: 1, display: "flex", flexDirection: "column", alignItems: "center", padding: "40px 20px",
+                borderRadius: Theme.borderRadius, border: "none", backgroundColor: "white", 
+                boxShadow: Theme.cardShadow, borderBottom: `8px solid ${sub.color}`, cursor: "pointer", transition: "0.2s"
+              }}
+              onMouseOver={(e) => e.currentTarget.style.transform = "translateY(-10px)"}
+              onMouseOut={(e) => e.currentTarget.style.transform = "translateY(0)"}
+            >
+              <span style={{ fontSize: "70px", marginBottom: "15px" }}>{sub.icon}</span>
+              <span style={{ fontSize: "24px", fontWeight: "bold", color: Theme.textMain }}>{sub.name}</span>
+            </button>
+          ))}
         </div>
+
+        {/* --- CONGRATS MESSAGE --- */}
+        {unlocked ? (
+          <div style={{ 
+            textAlign: "center", 
+            padding: "30px", 
+            backgroundColor: "#d1fae5", 
+            borderRadius: Theme.borderRadius, 
+            border: `3px solid ${Theme.success}`,
+            boxShadow: Theme.cardShadow
+          }}>
+            <h2 style={{ color: "#065f46", margin: 0, fontSize: "28px" }}>
+              🎉 Level 2 Unlocked!
+            </h2>
+            <p style={{ color: "#065f46", marginTop: "10px", fontSize: "18px", fontWeight: "500" }}>
+              Fantastic! You have mastered the foundations. Level 2 is now available in your sidebar.
+            </p>
+          </div>
+        ) : (
+          <div style={{ 
+            textAlign: "center", 
+            color: Theme.textMuted, 
+            fontSize: "18px",
+            backgroundColor: "rgba(255,255,255,0.5)",
+            padding: "15px",
+            borderRadius: "12px"
+          }}>
+             Keep earning stars to unlock the next level!
+          </div>
+        )}
+
       </div>
-
-      {/* Lesson Panel */}
-      <div style={styles.lessonPanel}>
-        <h3>New Lesson</h3>
-        <p>The hurricane has devastated the coastal town.</p>
-        <div style={styles.definition}>
-          <strong>Devastated:</strong> to strongly damage or destroy.
-        </div>
-      </div>
-
-      {/* Bottom Navigation */}
-      <div style={styles.navRow}>
-        <button style={styles.blueBtn}>🔊</button>
-        <button style={styles.orangeBtn}>⬅</button>
-        <button style={styles.orangeBtn}>➡</button>
-      </div>
-
-      <button onClick={onLogout} style={styles.logout}>
-        Logout
-      </button>
-
     </div>
   );
-}
-
-const styles = {
-  page: {
-    backgroundColor: "#FDF6E3",
-    minHeight: "100vh",
-    padding: "30px",
-    fontFamily: "Arial"
-  },
-
-  topBar: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center"
-  },
-
-  iconBtn: {
-    marginRight: "10px",
-    padding: "8px",
-    borderRadius: "10px",
-    border: "none",
-    cursor: "pointer"
-  },
-
-  startBtn: {
-    backgroundColor: "#FB8C00",
-    color: "white",
-    padding: "10px 20px",
-    borderRadius: "20px",
-    border: "none",
-    cursor: "pointer"
-  },
-
-  profileCard: {
-    display: "flex",
-    alignItems: "center",
-    backgroundColor: "#FFF8E7",
-    padding: "20px",
-    borderRadius: "20px",
-    marginTop: "20px",
-    boxShadow: "0px 6px 12px rgba(0,0,0,0.1)"
-  },
-
-  avatar: {
-    fontSize: "50px",
-    marginRight: "20px"
-  },
-
-  progressBar: {
-    width: "200px",
-    height: "10px",
-    backgroundColor: "#ddd",
-    borderRadius: "10px",
-    marginTop: "5px"
-  },
-
-  progressFill: {
-    width: "60%",
-    height: "100%",
-    backgroundColor: "#4CAF50",
-    borderRadius: "10px"
-  },
-
-  subjectRow: {
-    display: "flex",
-    justifyContent: "space-around",
-    marginTop: "30px"
-  },
-
-  subjectCard: {
-    backgroundColor: "#FFF8E7",
-    padding: "30px",
-    borderRadius: "20px",
-    width: "200px",
-    textAlign: "center",
-    boxShadow: "0px 6px 12px rgba(0,0,0,0.1)",
-    cursor: "pointer"
-  },
-
-  lessonPanel: {
-    backgroundColor: "#FFF8E7",
-    padding: "20px",
-    borderRadius: "20px",
-    marginTop: "30px",
-    boxShadow: "0px 6px 12px rgba(0,0,0,0.1)"
-  },
-
-  definition: {
-    marginTop: "10px",
-    backgroundColor: "#FFE0B2",
-    padding: "10px",
-    borderRadius: "10px"
-  },
-
-  navRow: {
-    display: "flex",
-    justifyContent: "center",
-    marginTop: "30px",
-    gap: "20px"
-  },
-
-  blueBtn: {
-    backgroundColor: "#1976D2",
-    color: "white",
-    borderRadius: "50%",
-    width: "60px",
-    height: "60px",
-    border: "none",
-    cursor: "pointer"
-  },
-
-  orangeBtn: {
-    backgroundColor: "#FB8C00",
-    color: "white",
-    borderRadius: "50%",
-    width: "60px",
-    height: "60px",
-    border: "none",
-    cursor: "pointer"
-  },
-
-  logout: {
-    marginTop: "30px",
-    padding: "8px 20px",
-    borderRadius: "10px",
-    border: "none",
-    backgroundColor: "#E53935",
-    color: "white",
-    cursor: "pointer"
-  }
 };
 
 export default Dashboard;
