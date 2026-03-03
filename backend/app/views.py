@@ -1,7 +1,7 @@
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 import json
-from .db_connections import db
+from .db_connections import interaction_collection
 from datetime import datetime
 
 
@@ -20,11 +20,12 @@ def log_interaction(request):
                     "click_latency": data.get("clickLatency", 0),
                     "saccade_pattern": data.get("saccades", [])
                 },
-                "timestamp": datetime.now()
+                "timestamp": datetime.utcnow()
+
             }
             
             # Insert into MongoDB InteractionLogs collection [cite: 27]
-            db.interaction_logs.insert_one(log_entry)
+            interaction_collection.insert_one(log_entry)
             
             return JsonResponse({"status": "success", "message": "Log saved!"}, status=201)
         except Exception as e:
